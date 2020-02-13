@@ -1,0 +1,34 @@
+---
+- name: RUN A NETCONF COMMAND
+  hosts: cisco
+  gather_facts: no
+
+  tasks:
+    - name: make sure jxmlease is installed locally
+      pip:
+        name: jxmlease
+      run_once: true
+      delegate_to: localhost
+    # documented here for cisco https://www.cisco.com/c/en/us/support/docs/storage-networking/management/200933-YANG-NETCONF-Configuration-Validation.html#anc9
+    - name: make sure netconf is on
+      ios_config:
+        lines:
+          - netconf-yang
+          - aaa new-model
+          - aaa authorization exec default local
+
+     # can verify with show platform software yang-management process
+
+    - name: get interface info
+      vars:
+        ansible_connection: netconf
+      netconf_rpc:
+        display: json
+        rpc: get-interface-information
+        content:
+          interface-name: "GigabitEthernet1"
+      register: netconf_info
+
+    - name: print out to terminal window
+      debug:
+        var: netconf_info
